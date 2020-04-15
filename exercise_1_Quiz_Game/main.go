@@ -18,24 +18,9 @@ func main() {
 	// output the total numbers of problem correct and many problems there were in total
 	filename := readConsole()
 	reader := openFile(filename)
-	c := make(chan []string)
-	go readLines(reader, c)
-	count, correct := 0, 0
-	var v []string
-	ok := true
-	for ok {
-		select {
-		case v, ok = <-c:
-			if !ok {
-				continue
-			}
-			count++
-			if question(v) {
-				correct++
-			}
-		}
-	}
-	fmt.Println("count", count, "result", correct)
+	questions := getLines(reader)
+	correct := makeQuestions(questions)
+	fmt.Println("count", len(questions), "result", correct)
 }
 
 func readConsole() string {
@@ -52,68 +37,43 @@ func openFile(filename string) io.Reader {
 	return reader
 }
 
-func readLines(reader io.Reader, c chan []string) {
+type quiz struct {
+	question string
+	answer   int
+}
+
+func getLines(reader io.Reader) []quiz {
 	r := csv.NewReader(reader)
+	var questions []quiz
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
-			close(c)
 			break
 		}
 		if err != nil {
 			log.Fatal(err)
 		}
-		c <- record
+		answer, err := strconv.Atoi(record[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+		questions = append(questions, quiz{record[0], answer})
 	}
+	return questions
 }
-
-func question(s []string) bool {
-	operatorLeftSide, operatorSideRight, operand := parseOperation(s[0])
-	possibleResult, err := strconv.Atoi(s[1])
-	if err != nil {
-		return false
+func makeQuestions(questions []quiz) int {
+	var answerUser int
+	var correct int
+	for _, v := range questions {
+		fmt.Printf("%s ", v.question)
+		fmt.Scanf("%d\n", &answerUser)
+		if compareResults(v.answer, answerUser) {
+			correct++
+		}
 	}
-	operatorLeftSideAInt, err := strconv.Atoi(operatorLeftSide)
-	if err != nil {
-		return false
-	}
-	operatorRightSideBInt, err := strconv.Atoi(operatorSideRight)
-	if err != nil {
-		return false
-	}
-	resultCalculate := calculate(operatorLeftSideAInt, operatorRightSideBInt, operand)
-	return compareResults(possibleResult, resultCalculate)
+	return correct
 }
 
 func compareResults(resultInput int, resultCalculate int) bool {
 	return resultInput == resultCalculate
-}
-
-func parseOperation(questions string) (string, string, string) {
-	var operatorSideLeft, operatorRightSide, operand string
-	for _, _question := range questions {
-		q := string(_question)
-		if operand != "" {
-			operatorRightSide += q
-			continue
-		}
-		if q == "+" || q == "-" || q == "*" {
-			operand = q
-			continue
-		}
-		operatorSideLeft += q
-	}
-	return operatorSideLeft, operatorRightSide, operand
-}
-
-func calculate(leftSide int, rightSide int, operand string) int {
-	switch operand {
-	case "+":
-		return leftSide + rightSide
-	case "-":
-		return leftSide - rightSide
-	case "*":
-		return leftSide * rightSide
-	}
-	return 0
 }
