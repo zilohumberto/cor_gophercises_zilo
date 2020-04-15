@@ -68,45 +68,52 @@ func readLines(reader io.Reader, c chan []string) {
 }
 
 func question(s []string) bool {
-	questions := s[0]
+	operatorLeftSide, operatorSideRight, operand := parseOperation(s[0])
 	possibleResult, err := strconv.Atoi(s[1])
 	if err != nil {
 		return false
 	}
-	var operandoLadoA, operandoLadoB, operador string
-	operador = ""
+	operatorLeftSideAInt, err := strconv.Atoi(operatorLeftSide)
+	if err != nil {
+		return false
+	}
+	operatorRightSideBInt, err := strconv.Atoi(operatorSideRight)
+	if err != nil {
+		return false
+	}
+	resultCalculate := calculate(operatorLeftSideAInt, operatorRightSideBInt, operand)
+	return compareResults(possibleResult, resultCalculate)
+}
+
+func compareResults(resultInput int, resultCalculate int) bool {
+	return resultInput == resultCalculate
+}
+
+func parseOperation(questions string) (string, string, string) {
+	var operatorSideLeft, operatorRightSide, operand string
 	for _, _question := range questions {
 		q := string(_question)
-		if operador != "" {
-			operandoLadoB += q
+		if operand != "" {
+			operatorRightSide += q
 			continue
 		}
 		if q == "+" || q == "-" || q == "*" {
-			operador = q
+			operand = q
 			continue
 		}
-		operandoLadoA += q
+		operatorSideLeft += q
 	}
-	operandoLadoAInt, err := strconv.Atoi(operandoLadoA)
-	if err != nil {
-		return false
-	}
-	operandoLadoBInt, err := strconv.Atoi(operandoLadoB)
-	if err != nil {
-		return false
-	}
-	calculateResult := calculate(operandoLadoAInt, operandoLadoBInt, operador)
-	return calculateResult == possibleResult
+	return operatorSideLeft, operatorRightSide, operand
 }
 
-func calculate(a int, b int, o string) int {
-	switch o {
+func calculate(leftSide int, rightSide int, operand string) int {
+	switch operand {
 	case "+":
-		return a + b
+		return leftSide + rightSide
 	case "-":
-		return a - b
+		return leftSide - rightSide
 	case "*":
-		return a * b
+		return leftSide * rightSide
 	}
 	return 0
 }
