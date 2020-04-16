@@ -1,3 +1,4 @@
+// https://courses.calhoun.io/lessons/les_goph_04
 package main
 
 import (
